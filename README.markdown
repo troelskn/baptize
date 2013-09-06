@@ -14,7 +14,7 @@ To get started, create a `Gemfile`:
 
 ```ruby
 source 'https://rubygems.org'
-gem 'capistrano'
+gem 'capistrano', '~> 2.15'
 gem 'baptize'
 ```
 
