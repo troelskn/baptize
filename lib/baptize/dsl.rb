@@ -120,6 +120,7 @@ module Capistrano
             policy.instance_eval &block
             namespace :baptize do
               namespace :policies do
+                desc "Configures #{policy.role}"
                 task policy.role do
                   logger.info "Applying policy #{policy.role}"
                   old_env_roles = ENV['ROLES']

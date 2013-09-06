@@ -24,32 +24,29 @@ module Capistrano
             install
           end
 
-          desc "Configures all available roles"
+          desc "Configures all available policies"
           task :install do ; end
 
-          desc "List configured roles"
-          task :roles do
-            load_configuration
-            result = []
-            logger.info "Configured roles:"
-            top.roles.each do |name,r|
-              logger.info "#{name} [" + r.servers.join(", ") + "]"
-            end
-          end
-
           namespace :policies do
-            desc "List configured policies"
+            desc "List available policies"
             task :default do
               load_configuration
-              logger.info "Configured policies:"
+              logger.info "Available policies:"
               tasks.flatten.each do |x|
                 if x.kind_of?(Capistrano::TaskDefinition) && x.fully_qualified_name != "baptize:policies"
                   name = x.fully_qualified_name.gsub(/^baptize:policies:/, "")
                   policy = Capistrano::Baptize::DSL.policies[name.to_sym]
-                  logger.info "#{name} [" + policy.dependencies.join(", ") + "]"
+                  logger.info "#{name}:"
+                  logger.info "->  servers:"
+                  top.roles[name.to_sym].servers.each do |s|
+                    logger.info "->    #{s}"
+                  end
+                  logger.info "->  dependencies:"
+                  policy.dependencies.each do |d|
+                    logger.info "->    #{d}"
+                  end
                 end
               end
-              # logger.info "Policies have been defined for roles: " + policies.join(", ")
             end
           end
 
