@@ -4,8 +4,9 @@ module Capistrano
     # Defines all baptize top-level tasks
     def self.install(scope)
       scope.instance_eval do
-        set :root_path, File.expand_path(Dir.pwd)
-        set :capistrano_path, "#{root_path}/capistrano"
+        set :root_path { File.expand_path(Dir.pwd) }
+        set :capistrano_path { "#{root_path}/capistrano" }
+
         # Can't run this here, since Capfile might want to redefine
         # load_configuration :roles
 

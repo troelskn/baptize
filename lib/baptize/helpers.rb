@@ -3,7 +3,7 @@ module Capistrano
 
     module Helpers
       def asset_path(asset)
-        File.join(fetch(:assets_path), asset)
+        File.join("#{capistrano_path}/assets", asset)
       end
 
       def remote_assert(command)
