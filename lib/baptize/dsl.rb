@@ -123,15 +123,14 @@ module Capistrano
                 desc "Configures #{policy.role}"
                 task policy.role do
                   logger.info "Applying policy #{policy.role}"
-                  old_env_roles = ENV['ROLES']
                   # TODO: This is maybe not ideal, as multiple roles would be applied in sequence, not parallel.
                   # Also, I'm not sure if they would be skipped for later roles, if already run for an earlier one
                   Capistrano::Baptize::DSL.packages_installed = []
-                  ENV['ROLES'] = policy.role.to_s
-                  policy.dependencies.each do |task_name|
-                    find_and_execute_task(task_name)
+                  for_roles policy.role do
+                    policy.dependencies.each do |task_name|
+                      find_and_execute_task(task_name)
+                    end
                   end
-                  ENV['ROLES'] = old_env_roles
                 end
               end
             end

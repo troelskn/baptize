@@ -2,6 +2,16 @@ module Capistrano
   module Baptize
 
     module Helpers
+
+      def for_roles(*roles, &block)
+        old_env_roles = ENV['ROLES']
+        ENV['ROLES'] = Array(roles).flatten.map(&:to_s).join(",")
+        logger.info "Invoking for roles: #{ENV['ROLES']}"
+        block.call
+      ensure
+        ENV['ROLES'] = old_env_roles
+      end
+
       def asset_path(asset)
         File.join("#{capistrano_path}/assets", asset)
       end
