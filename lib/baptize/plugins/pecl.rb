@@ -22,7 +22,13 @@ module Capistrano
             if ini_file.is_a?(Hash) && ini_file[:path]
               path = ini_file[:path]
             else
-              path = "/etc/php5/conf.d/#{package_name}.ini"
+              folder = "/etc/php5/conf.d"
+              invoke_command("php --ini") do |ch, stream, out|
+                if /Scan for additional .ini files in: (.*)/.match(out)
+                  folder = $1
+                end
+              end
+              path = "#{folder}/#{package_name}.ini"
             end
             put(text, path)
           end
