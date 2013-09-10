@@ -49,11 +49,41 @@ module Capistrano
                 end
               end
             end
-          end
+          end # end namespace policies
 
-        end
+          namespace :ssh do
+            desc "Describe available ssh connections"
+            task :default do
+              load_configuration
+              count = 1
+              roles.each do |name,servers|
+                servers.each do |host|
+                  puts "cap baptize:ssh:#{count} (#{name}) #{host}"
+                  count = count + 1
+                end
+              end
+            end
+
+            1.upto(10).each do |num|
+              task num.to_s.to_sym do
+                load_configuration
+                count = 1
+                roles.each do |name,servers|
+                  servers.each do |host|
+                    if count == num
+                      command = "ssh -i #{ssh_options[:keys]} #{user}@#{host}"
+                      puts "ssh -i #{ssh_options[:keys]} #{user}@#{host}"
+                      exec command
+                    end
+                    count = count + 1
+                  end
+                end
+              end
+            end
+          end # end namespace ssh
+        end # end namespace baptize
       end
-    end
 
+    end
   end
 end
