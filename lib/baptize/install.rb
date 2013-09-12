@@ -21,12 +21,13 @@ module Capistrano
           end
 
           task :default do
-            load_configuration
             install
           end
 
           desc "Configures all available policies"
-          task :install do ; end
+          task :install do
+            load_configuration
+          end
 
           namespace :policies do
             desc "List available policies"
