@@ -19,7 +19,7 @@ module Capistrano
           if use_tarball
             raise "Can't tarball streaming upload" if from.kind_of?(IO)
             exclude = use_tarball[:exclude] if (use_tarball.kind_of?(Hash) && use_tarball[:exclude])
-            tar_options = exclude.map {|glob| "--exclude \"#{glob}\" " }.join('')
+            tar_options = Array(exclude).flatten.map {|glob| "--exclude \"#{glob}\" " }.join('')
             tempfile = Dir::Tmpname.make_tmpname(['/tmp/baptize-', '.tar.gz'], nil)
             local_command = "cd #{from.shellescape} ; #{local_tar_bin} -zcf #{tempfile.shellescape} #{tar_options}."
             raise "Unable to tar #{from}" unless run_locally(local_command)
