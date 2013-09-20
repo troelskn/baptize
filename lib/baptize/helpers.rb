@@ -78,6 +78,11 @@ module Capistrano
               load(conf)
             end
           end
+          if fetch(:use_sudo, true)
+            default_run_options[:shell] = 'sudo bash'
+          else
+            default_run_options[:shell].gsub!(/^sudo /, "")
+          end
         end
       end
 
