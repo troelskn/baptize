@@ -14,10 +14,7 @@ module Capistrano
 
           desc "Loads baptize configuration files"
           task :load_configuration do
-            top.instance_eval do
-              top.load_configuration :baptize
-              default_run_options[:shell] = 'sudo bash' if fetch(:use_sudo, true)
-            end
+            top.load_configuration :baptize
           end
 
           task :default do
