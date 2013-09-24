@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "baptize"
-  s.version = "0.0.4"
+  s.version = "0.0.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Troels Knak-Nielsen"]
-  s.date = "2013-09-08"
+  s.date = "2013-09-24"
   s.description = "Baptize is an extension for Capistrano, that allows for server provisioning"
   s.email = ["troels@knak-nielsen.dk"]
   s.extra_rdoc_files = [
