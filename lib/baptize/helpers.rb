@@ -101,7 +101,7 @@ module Capistrano
       def render(path, locals = {})
         require 'erb'
         require 'ostruct'
-        ERB.new(File.read(path)).result(OpenStruct.new(locals).instance_eval { binding })
+        ERB.new(File.read(path)).result(locals.kind_of?(Binding) ? locals : OpenStruct.new(locals).instance_eval { binding })
       end
 
     end
