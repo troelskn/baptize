@@ -39,7 +39,7 @@ module Capistrano
         else
           command << "rake #{rake_command}"
         end
-        run(command)
+        options[:norun] ? command : run(command)
       end
 
       # logs the command then executes it locally.
