@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Troels Knak-Nielsen"]
-  s.date = "2013-09-24"
+  s.date = "2013-09-30"
   s.description = "Baptize is an extension for Capistrano, that allows for server provisioning"
   s.email = ["troels@knak-nielsen.dk"]
   s.extra_rdoc_files = [
@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
     "lib/baptize/plugins/transfer.rb"
   ]
   s.homepage = "http://github.com/troelskn/baptize"
+  s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = "2.0.7"
   s.summary = "Baptize is an extension for Capistrano, that allows for server provisioning"

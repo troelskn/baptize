@@ -10,6 +10,7 @@ begin
     gemspec.homepage = "http://github.com/troelskn/baptize"
     gemspec.description = gemspec.summary
     gemspec.authors = ["Troels Knak-Nielsen"]
+    gemspec.license = 'MIT'
     gemspec.add_dependency 'capistrano'
     gemspec.files = FileList['lib/**/*.rb'].to_a
   end
