@@ -11,7 +11,7 @@ begin
     gemspec.description = gemspec.summary
     gemspec.authors = ["Troels Knak-Nielsen"]
     gemspec.license = 'MIT'
-    gemspec.add_dependency 'capistrano'
+    gemspec.add_dependency 'capistrano', '~> 2.15.5'
     gemspec.files = FileList['lib/**/*.rb'].to_a
   end
   Jeweler::GemcutterTasks.new
