@@ -68,7 +68,8 @@ module Capistrano
               roles.each do |name,servers|
                 servers.each do |host|
                   if count == num
-                    command = "ssh -i #{ssh_options[:keys]} #{user}@#{host}"
+                    change_dir = exists?(:deploy_to) ? ("cd " + fetch(:deploy_to) + "/current ; ") : ""
+                    command = "ssh -i #{ssh_options[:keys]} #{user}@#{host} -t '#{change_dir}sudo su'"
                     puts command
                     exec command
                   end
