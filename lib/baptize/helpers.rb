@@ -27,7 +27,7 @@ module Capistrano
 
       # Runs a rake command remotely
       def remote_rake(rake_command, options = {})
-        options = {:bundle_cmd => fetch(:bundle_cmd, "bundle"), :current_path => current_path, :rails_env => rails_env, :env => {}}.merge(options)
+        options = {:bundle_cmd => fetch(:bundle_cmd, "bundle"), :current_path => current_path, :rails_env => rails_env, :env => {}, :pty => false}.merge(options)
         command = ""
         command << "cd #{options[:current_path]} && " if options[:current_path]
         command << "RAILS_ENV=#{options[:rails_env]} " if options[:rails_env]
@@ -39,7 +39,7 @@ module Capistrano
         else
           command << "rake #{rake_command}"
         end
-        options[:norun] ? command : run(command)
+        options[:norun] ? command : run(command, :pty => options[:pty])
       end
 
       # logs the command then executes it locally.
