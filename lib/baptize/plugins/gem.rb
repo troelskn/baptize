@@ -3,7 +3,7 @@ module Capistrano
     module Plugins
       module Gem
 
-        def gem(package_name, options = {})
+        def install_gem(package_name, options = {})
           cmd = "gem install #{package_name}"
           cmd << " --version '#{options[:version]}'" if options[:version]
           cmd << " --source #{options[:source]}" if options[:source]
