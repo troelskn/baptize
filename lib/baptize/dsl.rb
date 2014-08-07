@@ -158,10 +158,14 @@ module Capistrano
                                       rescue VerificationFailure => err
                                         false
                                       end
-                  if already_installed
+                  if already_installed && !ENV['FORCE_INSTALL']
                     logger.info "Skipping previously installed package #{package.name}"
                   else
-                    logger.info "Installing package #{package.name}"
+                    if already_installed && ENV['FORCE_INSTALL']
+                      logger.important "Force installing previously installed package #{package.name}"
+                    else
+                      logger.info "Installing package #{package.name}"
+                    end
                     instance_eval(&package.install_block)
                     instance_eval(&package.verify_block)
                   end
@@ -178,12 +182,17 @@ module Capistrano
             end
           end
         end
-        package.dependencies.each do |task_name|
-          before package.full_name, task_name
+        if ENV['SKIP_DEPENDENCIES']
+          before package.full_name do
+            logger.important "Skipping dependencies for package #{package.name}"
+          end
+        else
+          package.dependencies.each do |task_name|
+            before package.full_name, task_name
+          end
         end
       end
     end
 
   end
 end
-
