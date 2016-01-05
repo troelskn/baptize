@@ -25,4 +25,5 @@ extend Baptize::DSL
 set_if_empty :logger, Proc.new { Baptize::Registry.logger }
 set_if_empty :dry_run, true
 set_if_empty :use_sudo, true
+set_if_empty :use_bash, true
 set_if_empty :ssh_verbose, !!ENV['VERBOSE']

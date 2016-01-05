@@ -44,11 +44,11 @@ module Baptize
           SSHKit.config.output_verbosity = Logger::DEBUG
         end
         begin
-          if fetch(:use_sudo)
-            ssh.send(action, :sudo, *args)
-          else
-            ssh.send(action, *args)
+          if fetch(:use_bash)
+            args = ["bash -c " + args.join(" ; ").shellescape]
           end
+          args.unshift(:sudo) if fetch(:use_sudo)
+          ssh.send(action, *args)
         ensure
           SSHKit.config.output_verbosity = old_verbosity if old_verbosity
         end
