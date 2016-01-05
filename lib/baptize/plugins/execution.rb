@@ -35,6 +35,32 @@ module Baptize
         call_current_ssh_connection :test, command
       end
 
+      def upload(local, remote, options = {})
+        if fetch(:use_sudo)
+          # perform the transfer in two steps if we're using sudo
+          final = remote
+          remote = "/tmp/baptize_#{File.basename(remote)}"
+        end
+        ssh = fetch(:current_ssh_connection)
+        old_verbosity = nil
+        if fetch(:ssh_verbose)
+          old_verbosity = SSHKit.config.output_verbosity
+          SSHKit.config.output_verbosity = Logger::DEBUG
+        end
+        begin
+          ssh.upload! local, remote, options
+        ensure
+          SSHKit.config.output_verbosity = old_verbosity if old_verbosity
+        end
+        if fetch(:use_sudo)
+          remote_execute "mv #{remote.shellescape} #{final.shellescape}"
+        end
+      end
+
+      def put(buffer, remote, options = {})
+        upload StringIO.new(buffer), remote, options
+      end
+
       private
       def call_current_ssh_connection(action, *args)
         ssh = fetch(:current_ssh_connection)
@@ -45,7 +71,7 @@ module Baptize
         end
         begin
           if fetch(:use_bash)
-            args = ["bash -c " + args.join(" ; ").shellescape]
+            args = ["bash -c " + args.join(" ; ").dump]
           end
           args.unshift(:sudo) if fetch(:use_sudo)
           ssh.send(action, *args)
