@@ -1,0 +1,21 @@
+# Load package definitions
+Dir.glob("packages/**/*.rb").each do |package|
+  load package
+end
+
+# Global configuration of ssh
+SSHKit.configure do |sshkit|
+  sshkit.backend.configure do |backend|
+    backend.ssh_options = {
+      user: "ubuntu",
+      forward_agent: true,
+      keys: "~/.ssh/aws-shoprise.pem"
+    }
+  end
+end
+
+# Configure individual servers (host -> roles)
+server "ec2-54-93-77-220.eu-central-1.compute.amazonaws.com", roles: %w(web)
+
+# Configure policies (role -> packages)
+policy :web, %w(essentials)
