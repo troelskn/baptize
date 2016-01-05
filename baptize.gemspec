@@ -15,6 +15,9 @@ Gem::Specification.new do |s|
   s.description = "Baptize is an extension for Capistrano, that allows for server provisioning"
   s.email = ["troels@knak-nielsen.dk"]
   s.executables = ["baptize"]
+  s.extra_rdoc_files = [
+    "README.markdown"
+  ]
   s.files = [
     "lib/baptize.rb",
     "lib/baptize/application.rb",
@@ -40,12 +43,15 @@ Gem::Specification.new do |s|
     s.specification_version = 4
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<capistrano>, ["~> 3.4.0"])
+      s.add_runtime_dependency(%q<capistrano>, ["~> 3.4"])
+      s.add_runtime_dependency(%q<jeweler>, ["~> 2.0"])
     else
-      s.add_dependency(%q<capistrano>, ["~> 3.4.0"])
+      s.add_dependency(%q<capistrano>, ["~> 3.4"])
+      s.add_dependency(%q<jeweler>, ["~> 2.0"])
     end
   else
-    s.add_dependency(%q<capistrano>, ["~> 3.4.0"])
+    s.add_dependency(%q<capistrano>, ["~> 3.4"])
+    s.add_dependency(%q<jeweler>, ["~> 2.0"])
   end
 end
 
