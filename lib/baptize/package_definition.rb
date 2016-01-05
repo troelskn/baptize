@@ -17,8 +17,18 @@ module Baptize
     def execute
       unless @registry.packages_executed.include? full_name
         @registry.packages_executed << full_name
-        @registry.before(self).each do |task|
-          task.call
+        logger.info "Resolving dependencies for #{name}"
+        @registry.before(self).each do |dependency|
+          logger.debug "--> #{dependency}"
+          @registry.resolve_dependency(dependency).tap do |task|
+            task.call
+          end
+        end
+        @dependencies.each do |dependency|
+          logger.debug "--> #{dependency}"
+          @registry.resolve_dependency(dependency).tap do |task|
+            task.call
+          end
         end
         instance_eval(&before_block) if self.before_block
         if verify_block
@@ -49,8 +59,10 @@ module Baptize
           logger.info "Nothing to do for package #{name}"
         end
         instance_eval(&after_block) if after_block
-        @registry.after(self).each do |task|
-          task.call
+        @registry.after(self).each do |dependency|
+          @registry.resolve_dependency(dependency).tap do |task|
+            task.call
+          end
         end
       end
     end

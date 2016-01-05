@@ -32,9 +32,7 @@ module Baptize
       @befores ||= {}
       @befores[subject_name] ||= []
       if other_task
-        task = packages[other_task] if other_task.kind_of?(String)
-        raise "Didn't find a package by that name" if task.nil?
-        @befores[subject_name] << task.method(:execute)
+        @befores[subject_name] << other_task
       elsif block_given?
         @befores[subject_name] << block
       end
@@ -45,13 +43,23 @@ module Baptize
       @afters ||= {}
       @afters[subject_name] ||= []
       if other_task
-        task = packages[other_task] if other_task.kind_of?(String)
-        raise "Didn't find a package by that name" if task.nil?
-        @afters[subject_name] << task.method(:execute)
+        @afters[subject_name] << other_task
       elsif block_given?
         @afters[subject_name] << block
       end
       @afters[subject_name]
+    end
+
+    def self.resolve_dependency(mixed)
+      if mixed.kind_of?(String) || mixed.kind_of?(Symbol)
+        task = packages[mixed.to_s]
+        raise "Didn't find a package by that name: '#{mixed}'" if task.nil?
+        task.method(:execute)
+      elsif mixed.kind_of? PackageDefinition
+        mixed.method(:execute)
+      else
+        mixed
+      end
     end
 
     def self.define_package(package_name, &config_block)
