@@ -1,3 +1,6 @@
 source 'https://rubygems.org'
-gem 'capistrano', '~> 3.4'
-gem 'jeweler', '~> 2.0'
+gem 'sshkit', '~> 1.8'
+
+group :development do
+  gem 'jeweler', '~> 2.0'
+end

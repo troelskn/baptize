@@ -94,6 +94,55 @@ module Baptize
       end
     end
 
+    def self.servers
+      @servers ||= {}
+    end
+
+    def self.define_server(role, host, options = {})
+      role = role.to_sym
+      servers[host] = options.merge(hostname: host)
+      servers[host][:roles] ||= []
+      servers[host][:roles] << role unless servers[host][:roles].include?(role)
+      servers[host]
+    end
+
+    def self.servers_for_role(role)
+      role = role.to_sym
+      host_columns = [:password, :hostname, :port, :user, :key, :ssh_options]
+      servers.values
+      .select do |server|
+        server[:roles].include?(role)
+      end.map do |server|
+        server.select {|k,v| host_columns.include?(k) }
+      end
+    end
+
+    def self.for_role(role, options={}, &block)
+      subset_copy = Marshal.dump(servers_for_role(role))
+      SSHKit::Coordinator.new(Marshal.load(subset_copy)).each(options, &block)
+    end
+
   end # module Registry
 
 end # module Baptize
+
+=begin
+
+    def role(name, hosts, options={})
+      servers.add_role(name, hosts, options)
+    end
+
+    def roles(*names)
+      servers.roles_for(names.flatten)
+    end
+
+    def servers
+      @servers ||= Servers.new
+    end
+
+    def on(hosts, options={}, &block)
+      subset_copy = Marshal.dump(Configuration.env.filter(hosts))
+      SSHKit::Coordinator.new(Marshal.load(subset_copy)).each(options, &block)
+    end
+
+=end

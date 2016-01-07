@@ -12,8 +12,29 @@ module Baptize
       "baptize"
     end
 
+    def load_rakefile
+      super
+      standard_exception_handling do
+        in_namespace :packages do
+          Baptize::Registry.packages.values.each do |package|
+            @last_description = package.description
+            define_task(Rake::Task, package.name.to_s) do
+              puts "Invoke package: #{package.name}"
+              Baptize::Registry.policies.keys.each do |role|
+                on roles(role), in: :parallel do |host|
+                  Baptize::Registry.execution_scope.set :current_host, host
+                  Baptize::Registry.execution_scope.set :current_ssh_connection, ssh_connection
+                  package.execute
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
     def sort_options(options)
-      super.push(version, dry_run, roles, hostfilter)
+      super.push(version, dry_run, roles)
     end
 
     def handle_options
@@ -83,16 +104,6 @@ module Baptize
        lambda { |value|
          raise "TODO: Port this"
          Configuration.env.add_cmdline_filter(:role, value)
-       }
-      ]
-    end
-
-    def hostfilter
-      ['--hosts HOSTS', '-z',
-       "Run SSH commands only on matching hosts",
-       lambda { |value|
-         raise "TODO: Port this"
-         Configuration.env.add_cmdline_filter(:host, value)
        }
       ]
     end
