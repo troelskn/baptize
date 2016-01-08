@@ -31,9 +31,16 @@ end
 Baptize.application.define_command :deploy, "Deploys the configured policies to remote servers" do
   registry = Baptize::Registry
   registry.policies.keys.each do |role|
-    registry.for_role role, in: :parallel do |host|
-      registry.apply_policy role, host, self
-    end
+    registry.apply_policy role
+  end
+end
+
+# TODO: Maybe make this into options for deploy?
+Baptize.application.define_command :force, "Force install a single package" do |package_name|
+  registry = Baptize::Registry
+  raise "No package '#{package_name}'" unless registry.has_package? package_name
+  registry.policies.keys.each do |role|
+    registry.apply_policy role, package: package_name, force: true
   end
 end
 

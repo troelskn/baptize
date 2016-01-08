@@ -14,6 +14,10 @@ module Baptize
       @name, @description, @block = name.to_sym, description, block
     end
 
+    def name_with_parameters
+      [name, *block.parameters.map(&:last).map(&:to_s).map(&:upcase)].join(" ").strip
+    end
+
     def invoke(*args)
       block.call(*args)
     end
@@ -54,10 +58,10 @@ module Baptize
         opts.separator ""
         opts.separator "COMMANDS are ..."
 
-        width = [commands.values.map(&:name).map(&:length), 31].flatten.max
+        width = [commands.values.map(&:name_with_parameters).map(&:length), 31].flatten.max
         commands.values.each do |command|
           opts.separator sprintf("    %-#{width}s  %s\n",
-            command.name,
+            command.name_with_parameters,
             command.description)
         end
 

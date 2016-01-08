@@ -14,8 +14,8 @@ module Baptize
       @after_block = nil
     end
 
-    def execute
-      unless @registry.packages_executed.include? full_name
+    def execute(options={})
+      unless @registry.packages_executed.include?(full_name) || options[:force]
         @registry.packages_executed << full_name
         logger.info "Resolving dependencies for #{name}"
         @registry.before(self).each do |dependency|

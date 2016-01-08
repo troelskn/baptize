@@ -24,6 +24,10 @@ module Baptize
       @packages ||= {}
     end
 
+    def self.has_package?(package_name)
+      !! @packages[package_name]
+    end
+
     def self.packages_executed
       @packages_executed ||= []
     end
@@ -85,12 +89,14 @@ module Baptize
       policies[role.to_sym] = package_names.map(&:to_s)
     end
 
-    def self.apply_policy(role, host, ssh_connection)
-      execution_scope.set :current_host, host
-      execution_scope.set :current_ssh_connection, ssh_connection
-      policies[role.to_sym].each do |package_name|
-        raise "No package '#{package_name}'" unless packages[package_name]
-        packages[package_name].execute
+    def self.apply_policy(role, options={})
+      ssh_for_role role do |host, ssh_for_role|
+        policies[role.to_sym].each do |package_name|
+          if options[:package].nil? || package_name.to_sym == options[:package].to_sym
+            raise "No package '#{package_name}'" unless packages[package_name]
+            packages[package_name].execute(force: options[:force])
+          end
+        end
       end
     end
 
@@ -120,6 +126,15 @@ module Baptize
     def self.for_role(role, options={}, &block)
       subset_copy = Marshal.dump(servers_for_role(role))
       SSHKit::Coordinator.new(Marshal.load(subset_copy)).each(options, &block)
+    end
+
+    def self.ssh_for_role(role, &block)
+      registry = self
+      for_role role, in: :parallel do |host|
+        registry.execution_scope.set :current_host, host
+        registry.execution_scope.set :current_ssh_connection, self
+        block.call
+      end
     end
 
   end # module Registry
