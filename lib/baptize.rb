@@ -1,4 +1,4 @@
-require 'rake'
+# require 'rake'
 require 'sshkit'
 require 'baptize/version'
 require 'baptize/registry'

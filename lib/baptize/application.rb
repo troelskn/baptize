@@ -1,111 +1,180 @@
+require 'shellwords'
+require 'optparse'
+
 module Baptize
-  class Application < Rake::Application
+
+  class << self
+    attr_accessor :application
+  end
+
+  class Command
+    attr_reader :name, :description, :block
+
+    def initialize(name, description=nil, &block)
+      @name, @description, @block = name.to_sym, description, block
+    end
+
+    def invoke(*args)
+      block.call(*args)
+    end
+
+  end # class Command
+
+  # Most of this is copy-paste fom Rake::Application
+  # https://github.com/ruby/rake/blob/master/lib/rake/application.rb
+  class Application
+
+    attr_accessor :commands
 
     def initialize
-      super
-      @rakefiles = %w(bapfile Bapfile bapfile.rb Bapfile.rb)
-      Rake.application = self
-      require 'baptize/rake'
+      @original_dir = Dir.pwd
+      @bapfiles = %w(bapfile Bapfile bapfile.rb Bapfile.rb)
+      @commands = {}
+      Baptize.application = self
+      load 'baptize/commands.rb'
     end
 
-    def name
-      "baptize"
-    end
-
-    def load_rakefile
-      super
+    def run
       standard_exception_handling do
-        in_namespace :packages do
-          Baptize::Registry.packages.values.each do |package|
-            @last_description = package.description
-            define_task(Rake::Task, package.name.to_s) do
-              puts "Invoke package: #{package.name}"
-              Baptize::Registry.policies.keys.each do |role|
-                on roles(role), in: :parallel do |host|
-                  Baptize::Registry.execution_scope.set :current_host, host
-                  Baptize::Registry.execution_scope.set :current_ssh_connection, ssh_connection
-                  package.execute
-                end
-              end
-            end
-          end
-        end
+        parse_input
+        load_bapfile
+        dispatch
       end
     end
 
-    def sort_options(options)
-      super.push(version, dry_run, roles)
+    def define_command(name, description=nil, &block)
+      Command.new(name, description, &block).tap do |command|
+        @commands[command.name] = command
+      end
     end
 
-    def handle_options
-      options.rakelib = ['rakelib']
-      options.trace_output = $stderr
+    def parse_input
+      @arguments = OptionParser.new do |opts|
+        opts.banner = "baptize [OPTIONS] COMMAND"
+        opts.separator ""
+        opts.separator "COMMANDS are ..."
 
-      OptionParser.new do |opts|
-        opts.banner = "Baptize prepares your servers"
+        width = [commands.values.map(&:name).map(&:length), 31].flatten.max
+        commands.values.each do |command|
+          opts.separator sprintf("    %-#{width}s  %s\n",
+            command.name,
+            command.description)
+        end
+
         opts.separator ""
-        opts.separator "Show available tasks:"
-        opts.separator "    bundle exec baptize -T"
-        opts.separator ""
-        opts.separator "Invoke (or simulate invoking) a task:"
-        opts.separator "    bundle exec baptize [--dry-run] TASK"
-        opts.separator ""
-        opts.separator "Advanced options:"
+        opts.separator "OPTIONS are ..."
 
         opts.on_tail("-h", "--help", "-H", "Display this help message.") do
           puts opts
           exit
         end
 
-        standard_rake_options.each { |args| opts.on(*args) }
-        opts.environment('RAKEOPT')
-      end.parse!
-    end
-
-
-    def display_error_message(ex)
-      unless options.backtrace
-        if (loc = Rake.application.find_rakefile_location)
-          whitelist = (@imported.dup << loc[0]).map{|f| File.absolute_path(f, loc[1])}
-          pattern = %r@^(?!#{whitelist.map{|p| Regexp.quote(p)}.join('|')})@
-          Rake.application.options.suppress_backtrace_pattern = pattern
+        opts.on('--bapfile', '-f [FILENAME]', "Use FILENAME as the bapfile to search for.") do |value|
+          value ||= ''
+          @bapfiles.clear
+          @bapfiles << value
         end
-        trace "(Backtrace restricted to imported tasks)"
+
+        opts.on('--verbose', '-v', "Log message to standard output.") do |value|
+          Registry.execution_scope.set :verbose, true
+        end
+
+        opts.on('--version', '-V', "Display the program version.") do |value|
+          puts "baptize, version #{Baptize::VERSION}"
+          exit
+        end
+
+      end.parse(ARGV)
+    end
+
+    def dispatch
+      args = @arguments.dup
+      command_name = args.shift&.to_sym
+      fail "No command given. Try baptize --help" if command_name.nil?
+      command = commands[command_name]
+      fail "Invalid command #{command_name}" unless command
+      command.invoke(*args)
+    end
+
+    def load_bapfile
+      standard_exception_handling do
+        raw_load_bapfile
       end
-      super
     end
 
-    private
-
-    def version
-      ['--version', '-V',
-       "Display the program version.",
-       lambda { |_value|
-         require 'capistrano/version'
-         puts "Baptize Version: #{Baptize::VERSION} (Capistrano Version: #{Capistrano::VERSION}, Rake Version: #{RAKEVERSION})"
-         exit
-       }
-      ]
+    def raw_load_bapfile # :nodoc:
+      bapfile, location = find_bapfile_location
+      fail "No Bapfile found (looking for: #{@bapfiles.join(', ')})" if bapfile.nil?
+      @bapfile = bapfile
+      Dir.chdir(location)
+      print_bapfile_directory(location)
+      load(File.expand_path(@bapfile)) if @bapfile && @bapfile != ''
     end
 
-    def dry_run
-      ['--dry-run', '-n',
-       "Do a dry run without executing actions",
-       lambda { |_value|
-         raise "TODO: Port this"
-         Configuration.env.set(:sshkit_backend, SSHKit::Backend::Printer)
-       }
-      ]
+    def print_bapfile_directory(location) # :nodoc:
+      $stderr.puts "(in #{Dir.pwd})" unless @original_dir == location
     end
 
-    def roles
-      ['--roles ROLES', '-r',
-       "Run SSH commands only on hosts matching these roles",
-       lambda { |value|
-         raise "TODO: Port this"
-         Configuration.env.add_cmdline_filter(:role, value)
-       }
-      ]
+    def find_bapfile_location # :nodoc:
+      here = Dir.pwd
+      until (fn = have_bapfile)
+        Dir.chdir("..")
+        return nil if Dir.pwd == here # || options.nosearch
+        here = Dir.pwd
+      end
+      [fn, here]
+    ensure
+      Dir.chdir(@original_dir)
+    end
+
+    # True if one of the files in BAPFILES is in the current directory.
+    # If a match is found, it is copied into @bapfile.
+    def have_bapfile # :nodoc:
+      @bapfiles.each do |fn|
+        if File.exist?(fn)
+          others = Dir.glob(fn, File::FNM_CASEFOLD).sort
+          return others.size == 1 ? others.first : fn
+        elsif fn == ''
+          return fn
+        end
+      end
+      return nil
+    end
+
+    def bapfile_location(backtrace=caller) # :nodoc:
+      backtrace.map { |t| t[/([^:]+):/, 1] }
+
+      re = /^#{@bapfile}$/
+      re = /#{re.source}/i if windows?
+
+      backtrace.find { |str| str =~ re } || ''
+    end
+
+    # Provide standard exception handling for the given block.
+    def standard_exception_handling # :nodoc:
+      yield
+    rescue SystemExit
+      # Exit silently with current status
+      raise
+    rescue OptionParser::InvalidOption => ex
+      $stderr.puts ex.message
+      exit(false)
+    rescue Exception => ex
+      # Exit with error message
+      display_error_message(ex)
+      exit_because_of_exception(ex)
+    end
+
+    # Display the error message that caused the exception.
+    def display_error_message(ex) # :nodoc:
+      $stderr.puts "Error during processing: #{$!}"
+      $stderr.puts ex.backtrace.join("\n\t")
+    end
+
+    # Exit the program because of an unhandled exception.
+    # (may be overridden by subclasses)
+    def exit_because_of_exception(ex) # :nodoc:
+      exit(false)
     end
 
   end
